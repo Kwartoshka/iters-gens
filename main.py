@@ -7,22 +7,24 @@ class Iterator:
         with open(file_name) as f:
             self.content = json.load(f)
         self.file_name = file_name
-        self.item = -1
+        self.id = -1
         self.max = len(self.content)
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        self.item += 1
-        if self.item == self.max:
+
+        self.id += 1
+        if self.id == self.max:
             raise StopIteration
-        return self.item
+        return self.content[self.id]
+
 
     def get_list(self):
         countries_and_urls = []
         for i in self:
-            name = self.content[i]['name']['common']
+            name = i['name']['common']
             url = name.split(' ')
             url = 'https://en.m.wikipedia.org/wiki/' + '_'.join(url)
             string = name + " - " + url
@@ -34,35 +36,25 @@ class Iterator:
         with open(file_name, 'w', encoding='utf-8') as f:
             f.write(content)
 
-def doc_range(file_name):
-  with open(file_name) as f:
-    max = len(f.readlines())
-  item = 0
-  while item < max:
-    yield item
-    item += 1
-
-def hasher(file_name, encoding='utf-8'):
+def generator(file_name):
+    max = sum(1 for line in open(file_name))
     with open(file_name) as f:
-        doc = f.readlines()
-        result_data = ''
-        for i in doc_range(file):
-            hasher = hashlib.md5()
-            hasher.update(doc[i].encode(encoding))
+        item = 0
+        while item < max:
+            string = f.readline()
+            hasher = hashlib.md5(string.encode('utf-8'))
             result = str(hasher.hexdigest()) + '\n'
-            result_data += result
+            yield result
+            item += 1
+
+def hasher(file_name):
     with open(f'hashed_{file_name}', 'w') as f:
-        f.write(result_data)
+        for item in generator(file_name):
+          f.write(item)
 
 
+file = Iterator('countries.json')
+where_to_write = 'got_it.txt'
 
-
-start = time.time()
-a = Iterator('countries.json')
-a.write_in_file('got_it.txt')
-
-
-
-file = 'got_it.txt'
-
-hasher(file)
+file.write_in_file(where_to_write)
+hasher(where_to_write)
